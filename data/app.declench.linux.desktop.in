@@ -1,0 +1,23 @@
+[Desktop Entry]
+Name=Declench
+GenericName=Jaw Posture Coach
+Comment=Randomized daytime reminders to relax jaw clenching and hold passive N posture
+Exec=declench-linux %u
+Icon=@APP_ID@
+Terminal=false
+Type=Application
+Categories=Utility;GTK;GNOME;
+MimeType=x-scheme-handler/declench;
+Keywords=jaw;clenching;bruxism;tmj;posture;mindfulness;habit;break;reminder;
+StartupNotify=true
+StartupWMClass=@APP_ID@
+DBusActivatable=false
+Actions=TriggerNow;BackgroundMode;
+
+[Desktop Action TriggerNow]
+Name=Send Posture Check Now
+Exec=declench-linux --trigger-now
+
+[Desktop Action BackgroundMode]
+Name=Start Quietly in Background
+Exec=declench-linux --background

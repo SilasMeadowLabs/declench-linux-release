@@ -1,0 +1,10 @@
+#!@PYTHON@
+import sys
+
+sys.path.insert(1, "@pythondir@")
+
+from declench_gnome.__main__ import main
+
+if __name__ == "__main__":
+    sys.exit(main())
+

@@ -1,0 +1,8 @@
+.venv/
+builddir/
+build-flatpak/
+repo/
+.flatpak-builder/
+__pycache__/
+*.py[cod]
+.pytest_cache/

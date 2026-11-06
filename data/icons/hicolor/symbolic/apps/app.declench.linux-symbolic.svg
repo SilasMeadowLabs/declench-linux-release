@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- Monochrome GNOME symbolic version of the official Declench concentric ring + N-dot icon -->
+  <path d="M 8 1 A 7 7 0 1 0 8 15 A 7 7 0 1 0 8 1 Z M 8 3.2 A 4.8 4.8 0 1 1 8 12.8 A 4.8 4.8 0 1 1 8 3.2 Z"
+        fill="#2e3436"/>
+  <circle cx="8" cy="8" r="2.2" fill="#2e3436"/>
+</svg>

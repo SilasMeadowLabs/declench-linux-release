@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="declench-linux">
+  <schema id="app.declench.linux" path="/app/declench/linux/">
+    <key name="theme" type="s">
+      <default>'midnight'</default>
+      <summary>Selected Declench appearance theme</summary>
+    </key>
+    <key name="run-in-background" type="b">
+      <default>true</default>
+      <summary>Keep daytime posture scheduler active when window is closed</summary>
+    </key>
+    <key name="dismissed-mobile-promo" type="b">
+      <default>false</default>
+      <summary>Whether the subtle mobile sync banner on the Coach view was dismissed</summary>
+    </key>
+  </schema>
+</schemalist>
+

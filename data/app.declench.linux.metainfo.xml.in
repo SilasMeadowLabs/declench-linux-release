@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>@APP_ID@</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Declench</name>
+  <summary>Relax unconscious jaw clenching while you work</summary>
+
+  <developer id="app.declench">
+    <name>Silas Meadow Labs</name>
+  </developer>
+
+  <branding>
+    <color type="primary" scheme_preference="light">#d1fae5</color>
+    <color type="primary" scheme_preference="dark">#0f172a</color>
+  </branding>
+
+  <description>
+    <p>
+      Declench helps software developers, writers, and desk workers break unconscious daytime jaw clenching and tooth bracing using gentle, randomized posture check-ins.
+    </p>
+    <p>
+      Instead of predictable hourly timers that your brain quickly ignores, Declench uses variable-interval daytime nudges around the passive N resting posture: lips together, teeth slightly apart, and tongue resting lightly behind your upper front teeth.
+    </p>
+    <ul>
+      <li>100% free local-only desktop mode stored in local SQLite with zero account required</li>
+      <li>One-click check-in actions right inside GNOME notifications (Already in N, Caught and Reset, 5s Urge Resisted, Silence 1 Hour)</li>
+      <li>Progressive and adaptive interval widening plus occasional jaw stretch and cheek massage prompts</li>
+      <li>Sleep-protecting quiet hours, 24h / 14d / 12m stacked analytics, CSV/JSON export, and 8 curated color themes</li>
+      <li>Optional Declench Pro cloud sync to carry your streak and nudges onto iPhone, Apple Watch, Android, and Web</li>
+    </ul>
+    <p>
+      Note: Declench is a personal habit-awareness tool, not a medical device or clinical treatment.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">@APP_ID@.desktop</launchable>
+
+  <url type="homepage">https://declench.app</url>
+  <url type="bugtracker">https://github.com/SilasMeadowLabs/declench-linux-release/issues</url>
+  <url type="vcs-browser">https://github.com/SilasMeadowLabs/declench-linux-release</url>
+  <url type="help">https://declench.app/support</url>
+  <url type="faq">https://declench.app/method</url>
+
+  <categories>
+    <category>Utility</category>
+  </categories>
+
+  <keywords>
+    <keyword>jaw</keyword>
+    <keyword>clench</keyword>
+    <keyword>posture</keyword>
+    <keyword>habit</keyword>
+    <keyword>reminder</keyword>
+    <keyword>ergonomics</keyword>
+  </keywords>
+
+  <recommends>
+    <control>pointing</control>
+    <control>keyboard</control>
+    <display_length compare="ge">360</display_length>
+  </recommends>
+
+  <content_rating type="oars-1.1" />
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>Adaptive N-posture coaching dashboard and 14-day analytics in Midnight theme</caption>
+      <image>https://raw.githubusercontent.com/SilasMeadowLabs/declench-linux-release/v1.0.0/screenshots/coach-dark.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Coaching dashboard and check-in streak in Daylight light theme</caption>
+      <image>https://raw.githubusercontent.com/SilasMeadowLabs/declench-linux-release/v1.0.0/screenshots/coach-light.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Randomized daytime polling cadence, progressive widening, and quiet hours</caption>
+      <image>https://raw.githubusercontent.com/SilasMeadowLabs/declench-linux-release/v1.0.0/screenshots/schedule-dark.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Local-first offline mode with optional browser sign-in for Declench Pro mobile sync</caption>
+      <image>https://raw.githubusercontent.com/SilasMeadowLabs/declench-linux-release/v1.0.0/screenshots/mobile-sync-dark.png</image>
+    </screenshot>
+  </screenshots>
+
+  <releases>
+    <release version="1.0.0" date="2026-11-06">
+      <description>
+        <p>Initial GNOME desktop release with full local SQLite habit coaching, interactive GNOME notification actions, 8 themes, jaw stretch prompts, and optional Declench Pro mobile sync.</p>
+      </description>
+    </release>
+  </releases>
+</component>
+
