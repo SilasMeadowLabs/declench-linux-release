@@ -12,7 +12,23 @@ Free, local-first **GTK 4 + Libadwaita** daytime jaw-posture coach for **GNOME L
 - **8 Curated Themes & Stacked Analytics**: Includes 24-hour, 14-day, and 12-month posture charts plus CSV/JSON export.
 - **Optional Declench Pro Cloud Sync**: Connect via browser (`PKCE` OAuth flow) to keep your streak and schedule synced across iPhone, Apple Watch, Android, and [declench.app](https://declench.app).
 
-## Build & Install Flatpak Locally
+## Quick Install (GNOME Desktop Launcher)
+
+Clone and run `./install.sh` to create the local `.venv`, install the Declench desktop icon & `.desktop` launcher into `~/.local/share/applications`, and register the `declench://` browser sign-in handler:
+
+```bash
+git clone https://github.com/SilasMeadowLabs/declench-linux-release.git
+cd declench-linux-release
+./install.sh
+```
+
+Or build and install as a sandboxed Flatpak (`app.declench.linux`):
+
+```bash
+./install.sh --flatpak
+```
+
+## Build & Install Flatpak Manually
 
 ```bash
 flatpak install flathub org.flatpak.Builder org.gnome.Platform//51 org.gnome.Sdk//51
