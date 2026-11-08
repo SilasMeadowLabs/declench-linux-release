@@ -1,6 +1,6 @@
 # Declench for Linux (`app.declench.linux`)
 
-**Interrupt unconscious daytime jaw clenching while you code, write, and focus — and train a relaxed jaw as your default baseline.**
+**Interrupt unconscious daytime jaw clenching while you code, write, and focus, and train a relaxed jaw as your default baseline.**
 
 Built with **GTK 4 + Libadwaita** for GNOME Linux by **Silas Meadow Labs** · [declench.app](https://declench.app)
 
@@ -10,7 +10,7 @@ Built with **GTK 4 + Libadwaita** for GNOME Linux by **Silas Meadow Labs** · [d
 
 ## What Is Declench?
 
-Unconscious daytime jaw clenching and tooth bracing (*awake bruxism*) runs like a hidden background process. The moment your attention locks onto deep work — debugging code, reviewing pull requests, writing, or gaming — your masseter and temporalis muscles silently clamp down without you noticing.
+Unconscious daytime jaw clenching and tooth bracing (*awake bruxism*) runs like a hidden background process. The moment your attention locks onto deep work (debugging code, reviewing pull requests, writing, or gaming), your masseter and temporalis muscles silently clamp down without you noticing.
 
 Sticky notes on your monitor fade into the background after a day. Nightguards protect enamel while you sleep, but don't stop you from clenching into plastic or bracing all afternoon. And predictable fixed-interval timers get tuned out by your brain within 48 hours.
 
@@ -19,20 +19,20 @@ Sticky notes on your monitor fade into the background after a day. Nightguards p
 ### 1. The Passive "N" Resting Posture
 Say the letter **"N"** out loud and hold where your tongue lands:
 - **Lips gently together**
-- **Teeth slightly apart** (a relaxed 2–3 mm freeway space — zero tooth contact)
+- **Teeth slightly apart** (a relaxed 2-3 mm freeway space with zero tooth contact)
 - **Tip of the tongue resting lightly** on the palatal ridge right behind your upper front teeth
 
 Giving your jaw a specific, repeatable competing posture naturally disengages the jaw-closing muscles instead of leaving your bite hovering on the edge of a clench.
 
 ### 2. Variable-Interval ("Brain-Hack") Daytime Nudges
-Predictable clock ticks trigger **sensory habituation** — your nervous system learns to ignore a fixed 30-minute chime. Declench randomizes every interval (`±25%` jitter by default) strictly inside your configured **Awake Window** (e.g., `08:30` to `21:30`), catching tension in the exact moment it happens while keeping your evenings and sleep undisturbed.
+Predictable clock ticks trigger **sensory habituation**: your nervous system learns to ignore a fixed 30-minute chime. Declench randomizes every interval (`±25%` jitter by default) strictly inside your configured **Awake Window** (e.g., `08:30` to `21:30`), catching tension in the exact moment it happens while keeping your evenings and sleep undisturbed.
 
 ### 3. One-Click GNOME Notification Check-Ins & Adaptive Intervals
 Every desktop nudge arrives with instant action buttons right inside the GNOME notification banner:
-- **Already in "N"** — You were already relaxed when the nudge arrived. Declench widens your interval step-by-step toward your goal (e.g., `20m → 90m`).
-- **Caught & Reset** — You caught yourself clenching and dropped back into "N". Adaptive coaching gently tightens or holds your cadence while tension is active.
-- **5s Urge** — You noticed an urge to clench between alerts and rode it out for 5 seconds without biting down.
-- **Silence 1h** — Pause nudges for deep meetings or presentations with one click.
+- **Already in "N"**: You were already relaxed when the nudge arrived. Declench widens your interval step-by-step toward your goal (e.g., `20m → 90m`).
+- **Caught & Reset**: You caught yourself clenching and dropped back into "N". Adaptive coaching gently tightens or holds your cadence while tension is active.
+- **5s Urge**: You noticed an urge to clench between alerts and rode it out for 5 seconds without biting down.
+- **Silence 1h**: Pause nudges for deep meetings or presentations with one click.
 
 ### 4. Three-Phase Habit Telemetry & Jaw Unwind Prompts
 Track your **Followed Streak**, **Already in "N" Automaticity Rate**, **5-Second Urges Resisted**, and **Peak Clench Windows** across 24-hour, 14-day, and 12-month stacked charts, with optional guided jaw stretch and cheek massage prompts blended into every *N*th check-in.
@@ -54,7 +54,7 @@ Track your **Followed Streak**, **Already in "N" Automaticity Rate**, **5-Second
 | Feature | Free Linux Desktop Mode | Declench Pro ([declench.app](https://declench.app)) |
 | :--- | :--- | :--- |
 | **Price** | **100% Free Forever** (MIT Open Source) | **5-Day Free Trial** (no card required), then $4.99/mo or $39.99/yr |
-| **Account Required?** | **No** — 100% offline local SQLite | Optional 1-click **Sign In with Browser** (`PKCE` deep link) |
+| **Account Required?** | **No** (100% offline local SQLite) | Optional 1-click **Sign In with Browser** (`PKCE` deep link) |
 | **Randomized & Adaptive Schedule** | Included | Synced live across all your devices |
 | **24h / 14d / 12m Analytics & CSV/JSON Export** | Included | Synced across Desktop, Mobile & Web |
 | **8 Curated Color Themes & Jaw Exercises** | Included | Synced across Desktop, Mobile & Web |
