@@ -78,11 +78,16 @@
     </screenshot>
     <screenshot>
       <caption>Local-first offline mode with optional browser sign-in for Declench Pro mobile sync</caption>
-      <image>https://raw.githubusercontent.com/SilasMeadowLabs/declench-linux-release/v1.0.0/screenshots/mobile-sync-dark.png</image>
+      <image>https://raw.githubusercontent.com/SilasMeadowLabs/declench-linux-release/v1.0.1/screenshots/mobile-sync-dark.png</image>
     </screenshot>
   </screenshots>
 
   <releases>
+    <release version="1.0.1" date="2026-11-08">
+      <description>
+        <p>Added one-step install.sh helper script and updated Mobile &amp; Sync hero copy.</p>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-11-06">
       <description>
         <p>Initial GNOME desktop release with full local SQLite habit coaching, interactive GNOME notification actions, 8 themes, jaw stretch prompts, and optional Declench Pro mobile sync.</p>

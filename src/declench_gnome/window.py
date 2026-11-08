@@ -499,7 +499,7 @@ class DeclenchWindow(Adw.ApplicationWindow):
         hero.append(badge)
 
         title = Gtk.Label(
-            label="Keep Unclenching After You Step Away From Your Linux Desk",
+            label="Keep Declenching After You Step Away From Your Linux Desk",
             xalign=0,
             wrap=True,
         )

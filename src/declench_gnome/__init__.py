@@ -2,6 +2,6 @@
 
 APP_ID = "app.declench.linux"
 APP_NAME = "Declench"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.1"
 CANONICAL_WEB_URL = "https://declench.app"
 
