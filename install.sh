@@ -2,6 +2,58 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+USER_DATA_DIR="${XDG_DATA_HOME:-${HOME}/.local/share}"
+USER_CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}"
+
+stop_running_app() {
+    if command -v gdbus >/dev/null 2>&1; then
+        gdbus call --session \
+            --dest app.declench.linux \
+            --object-path /app/declench/linux \
+            --method org.gtk.Actions.Activate \
+            "quit" "[]" "{}" >/dev/null 2>&1 || true
+    fi
+    pkill -f declench_gnome 2>/dev/null || true
+}
+
+if [[ "${1:-}" == "--reset-sync" ]]; then
+    echo "Stopping Declench and clearing mobile/cloud sync session & local SQLite cache..."
+    stop_running_app
+    rm -rf "${USER_CONFIG_DIR}/declench" \
+           "${USER_DATA_DIR}/declench" \
+           "${HOME}/.var/app/app.declench.linux/config/declench" \
+           "${HOME}/.var/app/app.declench.linux/data/declench"
+    echo "Done! Cloud sync session and synced local database have been reset."
+    exit 0
+fi
+
+if [[ "${1:-}" == "--uninstall" ]]; then
+    echo "Removing Declench from GNOME Applications..."
+    stop_running_app
+    if command -v flatpak >/dev/null 2>&1; then
+        if [[ "${2:-}" == "--purge" ]]; then
+            flatpak uninstall --user --delete-data -y app.declench.linux >/dev/null 2>&1 || true
+        else
+            flatpak uninstall --user -y app.declench.linux >/dev/null 2>&1 || true
+        fi
+    fi
+    rm -f "${USER_DATA_DIR}/applications/app.declench.linux.desktop" \
+          "${USER_DATA_DIR}"/icons/hicolor/*/apps/app.declench.linux*
+    if [[ "${2:-}" == "--purge" ]]; then
+        rm -rf "${USER_CONFIG_DIR}/declench" \
+               "${USER_DATA_DIR}/declench" \
+               "${HOME}/.var/app/app.declench.linux"
+        echo "Purged ~/.config/declench, ~/.local/share/declench, and Flatpak sandbox data."
+    fi
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database -q "${USER_DATA_DIR}/applications" 2>/dev/null || true
+    fi
+    if command -v gtk4-update-icon-cache >/dev/null 2>&1; then
+        gtk4-update-icon-cache -q -t -f "${USER_DATA_DIR}/icons/hicolor" 2>/dev/null || true
+    fi
+    echo "Done! Declench has been removed from your GNOME app grid."
+    exit 0
+fi
 
 if [[ "${1:-}" == "--flatpak" ]]; then
     echo "Installing Declench as a user Flatpak (app.declench.linux)..."
