@@ -13,6 +13,9 @@ stop_running_app() {
             --method org.gtk.Actions.Activate \
             "quit" "[]" "{}" >/dev/null 2>&1 || true
     fi
+    if command -v flatpak >/dev/null 2>&1; then
+        flatpak kill app.declench.linux >/dev/null 2>&1 || true
+    fi
     pkill -f declench_gnome 2>/dev/null || true
 }
 
@@ -57,6 +60,8 @@ fi
 
 if [[ "${1:-}" == "--flatpak" ]]; then
     echo "Installing Declench as a user Flatpak (app.declench.linux)..."
+    stop_running_app
+    rm -f "${USER_DATA_DIR}/applications/app.declench.linux.desktop"
     if command -v flatpak-builder >/dev/null 2>&1; then
         flatpak-builder --user --install --force-clean "${SCRIPT_DIR}/build-flatpak" "${SCRIPT_DIR}/app.declench.linux.json"
     elif command -v flatpak >/dev/null 2>&1; then
@@ -71,6 +76,10 @@ if [[ "${1:-}" == "--flatpak" ]]; then
 fi
 
 echo "Setting up Declench for Linux (local GNOME desktop installation)..."
+stop_running_app
+if command -v flatpak >/dev/null 2>&1; then
+    flatpak uninstall --user -y app.declench.linux >/dev/null 2>&1 || true
+fi
 if [[ ! -x "${SCRIPT_DIR}/.venv/bin/python" ]]; then
     python3 -m venv --system-site-packages "${SCRIPT_DIR}/.venv"
 fi

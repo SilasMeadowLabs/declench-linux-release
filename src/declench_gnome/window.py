@@ -490,13 +490,13 @@ class DeclenchWindow(Adw.ApplicationWindow):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
         clamp.set_child(box)
 
-        # Hero Value Card
-        hero = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        hero.add_css_class("declench-pro-banner")
+        # Hero Value Card (Hidden once the user has an active paid Declench Pro subscription)
+        self.pro_hero_banner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        self.pro_hero_banner.add_css_class("declench-pro-banner")
 
         badge = Gtk.Label(label="DECLENCH PRO · IPHONE, APPLE WATCH, ANDROID & WEB", xalign=0)
         badge.add_css_class("declench-badge")
-        hero.append(badge)
+        self.pro_hero_banner.append(badge)
 
         title = Gtk.Label(
             label="Keep Declenching After You Step Away From Your Linux Desk",
@@ -504,7 +504,7 @@ class DeclenchWindow(Adw.ApplicationWindow):
             wrap=True,
         )
         title.add_css_class("title-2")
-        hero.append(title)
+        self.pro_hero_banner.append(title)
 
         desc = Gtk.Label(
             label=(
@@ -516,9 +516,9 @@ class DeclenchWindow(Adw.ApplicationWindow):
             wrap=True,
         )
         desc.add_css_class("declench-muted")
-        hero.append(desc)
+        self.pro_hero_banner.append(desc)
 
-        bullets = Gtk.Label(
+        self.lbl_pro_bullets = Gtk.Label(
             label=(
                 "• Native iPhone & Apple Watch app with 1-tap Lock Screen check-ins and Time-Sensitive Focus support\n"
                 "• Native Android Material 3 app with instant notification check-in buttons\n"
@@ -528,26 +528,24 @@ class DeclenchWindow(Adw.ApplicationWindow):
             xalign=0,
             wrap=True,
         )
-        hero.append(bullets)
+        self.pro_hero_banner.append(self.lbl_pro_bullets)
 
         cta_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin_top=6)
-        btn_trial = Gtk.Button(label="Start 5-Day Free Trial on declench.app")
-        btn_trial.add_css_class("declench-primary-cta")
-        btn_trial.connect(
-            "clicked", lambda *_: Gio.AppInfo.launch_default_for_uri(SIGNUP_TRIAL_URL, None)
-        )
-        cta_row.append(btn_trial)
+        self.btn_trial_cta = Gtk.Button(label="Start 5-Day Free Trial on declench.app")
+        self.btn_trial_cta.add_css_class("declench-primary-cta")
+        self.btn_trial_cta.connect("clicked", self._on_hero_trial_or_upgrade_clicked)
+        cta_row.append(self.btn_trial_cta)
 
         btn_mobile = Gtk.Button(label="iPhone & Android Apps")
         btn_mobile.connect(
             "clicked", lambda *_: Gio.AppInfo.launch_default_for_uri(HOMEPAGE_MOBILE_URL, None)
         )
         cta_row.append(btn_mobile)
-        hero.append(cta_row)
-        box.append(hero)
+        self.pro_hero_banner.append(cta_row)
+        box.append(self.pro_hero_banner)
 
         # Optional Cloud Account Sign-In & Sync Group (Browser OAuth + PKCE Deep Link)
-        sync_group = Adw.PreferencesGroup(
+        self.sync_group = Adw.PreferencesGroup(
             title="Optional Declench Cloud Sync",
             description=(
                 "Already started a 5-day trial or Declench Pro membership? Click Sign In with Browser "
@@ -559,9 +557,9 @@ class DeclenchWindow(Adw.ApplicationWindow):
             subtitle="Local-Only Mode (No network requests are made)",
             use_markup=False,
         )
-        sync_group.add(self.lbl_cloud_status)
+        self.sync_group.add(self.lbl_cloud_status)
 
-        fallback_expander = Adw.ExpanderRow(
+        self.fallback_expander = Adw.ExpanderRow(
             title="Browser blocked the app popup? Paste sign-in link",
             subtitle="Use only if a sandboxed browser blocks declench:// links",
             use_markup=False,
@@ -576,8 +574,8 @@ class DeclenchWindow(Adw.ApplicationWindow):
         )
         btn_paste_complete.connect("clicked", self._on_manual_callback_clicked)
         self.entry_callback_uri.add_suffix(btn_paste_complete)
-        fallback_expander.add_row(self.entry_callback_uri)
-        sync_group.add(fallback_expander)
+        self.fallback_expander.add_row(self.entry_callback_uri)
+        self.sync_group.add(self.fallback_expander)
 
         sync_btns = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin_top=8)
         self.btn_cloud_login = Gtk.Button(label="Sign In with Browser")
@@ -599,7 +597,7 @@ class DeclenchWindow(Adw.ApplicationWindow):
         self.btn_cloud_logout.connect("clicked", self._on_cloud_logout_clicked)
         sync_btns.append(self.btn_cloud_logout)
 
-        box.append(sync_group)
+        box.append(self.sync_group)
         box.append(sync_btns)
 
         # Notification Routing & Connected Devices Group (Switch Active Device Between Linux & Phone)
@@ -750,12 +748,38 @@ class DeclenchWindow(Adw.ApplicationWindow):
         for item in logs:
             self.history_list_box.append(self._build_log_row_card(item, compact=False))
 
+    def _on_hero_trial_or_upgrade_clicked(self, _btn: Gtk.Button) -> None:
+        target_url = BILLING_WEB_URL if self.cloud.is_signed_in else SIGNUP_TRIAL_URL
+        Gio.AppInfo.launch_default_for_uri(target_url, None)
+
     def _refresh_cloud_ui(self, stats: Optional[dict[str, Any]] = None) -> None:
         user = self.cloud.cached_user
         self._clear_box(self.devices_list_box)
 
         if self.cloud.is_signed_in and user:
-            status = str(user.get("subscription_status") or "active").replace("_", " ").title()
+            raw_sub = str(user.get("subscription_status") or "active").strip().lower()
+            plan_tier = str(user.get("plan_tier") or "").strip().lower()
+            is_paid_pro = raw_sub == "active" or plan_tier == "pro"
+
+            # Hide the trial upsell hero banner completely when the user is already a paid Pro member
+            self.pro_hero_banner.set_visible(not is_paid_pro)
+            self.fallback_expander.set_visible(False)
+
+            if is_paid_pro:
+                self.sync_group.set_title("Declench Pro Cloud Sync")
+                self.sync_group.set_description(
+                    "Your schedule, check-in history, and streak sync automatically across your Linux desktop, phone, and web."
+                )
+            else:
+                days_left = user.get("trial_days_remaining")
+                days_str = f" ({days_left}d remaining)" if days_left is not None else ""
+                self.sync_group.set_title(f"Declench Cloud Sync · Free Trial{days_str}")
+                self.sync_group.set_description(
+                    "Your free trial is active. Upgrade to Declench Pro anytime to keep multi-device sync after your trial."
+                )
+                self.btn_trial_cta.set_label("Upgrade to Declench Pro on declench.app")
+
+            status = "Declench Pro" if is_paid_pro else raw_sub.replace("_", " ").title()
             checkins = int((stats or {}).get("total_checkins") or 0)
             self.lbl_cloud_status.set_subtitle(
                 f"Connected as {user.get('email')} ({status} · {checkins} check-ins synced)"
@@ -803,6 +827,14 @@ class DeclenchWindow(Adw.ApplicationWindow):
                     )
                 )
         else:
+            self.pro_hero_banner.set_visible(True)
+            self.fallback_expander.set_visible(True)
+            self.btn_trial_cta.set_label("Start 5-Day Free Trial on declench.app")
+            self.sync_group.set_title("Optional Declench Cloud Sync")
+            self.sync_group.set_description(
+                "Already started a 5-day trial or Declench Pro membership? Click Sign In with Browser "
+                "to connect via Google, Apple, or Email without typing your password here."
+            )
             self.lbl_cloud_status.set_subtitle(
                 "Local-Only Mode (100% offline SQLite, zero network traffic)"
             )
