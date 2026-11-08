@@ -59,6 +59,7 @@ Track your **Followed Streak**, **Already in "N" Automaticity Rate**, **5-Second
 | **24h / 14d / 12m Analytics & CSV/JSON Export** | Included | Synced across Desktop, Mobile & Web |
 | **8 Curated Color Themes & Jaw Exercises** | Included | Synced across Desktop, Mobile & Web |
 | **Keep Declenching Away From Your Desk** | Linux desktop only | **Web Push + iPhone & Android** nudges while driving, running errands, or away from your keyboard |
+| **1-Click Active Device Switching** | Local desktop alerts | **Route Only to This Linux PC** at your desk, or switch active alerts to your phone in 1 click before stepping away |
 
 > **Honest Transparency:** Declench is a personal habit-awareness and posture coaching tool, not a medical or dental device, and does not diagnose, treat, or cure bruxism or TMJ disorders. Always consult a qualified dentist or physician for tooth wear, jaw pain, or sleep bruxism.
 

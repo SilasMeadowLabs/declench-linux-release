@@ -602,6 +602,40 @@ class DeclenchWindow(Adw.ApplicationWindow):
         box.append(sync_group)
         box.append(sync_btns)
 
+        # Notification Routing & Connected Devices Group (Switch Active Device Between Linux & Phone)
+        self.devices_group = Adw.PreferencesGroup(
+            title="Notification Routing and Connected Devices",
+            description=(
+                "Switch which device receives active posture nudges when moving between your Linux desk "
+                "and your phone so only one device buzzes at a time."
+            ),
+        )
+        self.row_this_linux_device = Adw.ActionRow(
+            title=self.cloud.default_device_name(),
+            subtitle="Active on this Linux desktop",
+            use_markup=False,
+        )
+        this_dev_btns = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            spacing=8,
+            valign=Gtk.Align.CENTER,
+        )
+        self.btn_only_this_linux = Gtk.Button(label="Only This Linux PC")
+        self.btn_only_this_linux.add_css_class("declench-primary-cta")
+        self.btn_only_this_linux.connect("clicked", self._on_only_this_linux_clicked)
+        this_dev_btns.append(self.btn_only_this_linux)
+
+        self.btn_toggle_this_linux = Gtk.Button(label="Enable This Device")
+        self.btn_toggle_this_linux.connect("clicked", self._on_toggle_this_linux_clicked)
+        this_dev_btns.append(self.btn_toggle_this_linux)
+
+        self.row_this_linux_device.add_suffix(this_dev_btns)
+        self.devices_group.add(self.row_this_linux_device)
+        box.append(self.devices_group)
+
+        self.devices_list_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        box.append(self.devices_list_box)
+
         self.view_stack.add_titled_with_icon(
             scroll, "everywhere", "Mobile & Sync", "phone-symbolic"
         )
@@ -625,6 +659,8 @@ class DeclenchWindow(Adw.ApplicationWindow):
             state_txt = "Paused indefinitely"
         elif prog["in_quiet_hours"]:
             state_txt = f"Quiet hours active ({prog['active_start_time']} to {prog['active_end_time']}) · Sleep protected"
+        elif self.cloud.is_signed_in and not self.cloud.is_this_device_enabled:
+            state_txt = f"Muted on this Linux PC (Routed to other device) · {prog['schedule_description']}"
         else:
             prefix = "Active & Cloud Synced" if self.cloud.is_signed_in else "Active on Linux"
             state_txt = f"{prefix} · {prog['schedule_description']}"
@@ -716,6 +752,8 @@ class DeclenchWindow(Adw.ApplicationWindow):
 
     def _refresh_cloud_ui(self, stats: Optional[dict[str, Any]] = None) -> None:
         user = self.cloud.cached_user
+        self._clear_box(self.devices_list_box)
+
         if self.cloud.is_signed_in and user:
             status = str(user.get("subscription_status") or "active").replace("_", " ").title()
             checkins = int((stats or {}).get("total_checkins") or 0)
@@ -725,6 +763,45 @@ class DeclenchWindow(Adw.ApplicationWindow):
             self.btn_cloud_login.set_label("Switch Account in Browser")
             self.btn_cloud_sync_now.set_sensitive(not self._sync_in_flight)
             self.btn_cloud_logout.set_sensitive(True)
+
+            my_dev = self.cloud.this_device
+            my_enabled = self.cloud.is_this_device_enabled
+            devices = self.cloud.cached_devices
+            active_count = self.cloud.active_device_count
+
+            if my_dev is not None:
+                self.row_this_linux_device.set_title(str(my_dev.get("device_name") or self.cloud.default_device_name()))
+                if my_enabled:
+                    sub = (
+                        "Active (Only device receiving nudges)"
+                        if active_count == 1
+                        else f"Active ({active_count} devices currently enabled)"
+                    )
+                else:
+                    sub = "Muted on this Linux PC (Nudges routed to your other active device)"
+            else:
+                self.row_this_linux_device.set_title(self.cloud.default_device_name())
+                sub = "Not registered on account yet · Click Enable This Device"
+
+            self.row_this_linux_device.set_subtitle(sub)
+            self.btn_toggle_this_linux.set_label(
+                "Mute This PC" if (my_dev is not None and my_enabled) else "Enable This Device"
+            )
+            self.btn_toggle_this_linux.set_sensitive(not self._sync_in_flight)
+            self.btn_only_this_linux.set_sensitive(
+                not self._sync_in_flight
+                and (my_dev is None or not my_enabled or active_count > 1)
+            )
+
+            for d in devices:
+                self.devices_list_box.append(
+                    self._build_device_row_card(
+                        d,
+                        is_this=(my_dev is not None and d.get("id") == my_dev.get("id")),
+                        multi_devices=len(devices) > 1,
+                        active_count=active_count,
+                    )
+                )
         else:
             self.lbl_cloud_status.set_subtitle(
                 "Local-Only Mode (100% offline SQLite, zero network traffic)"
@@ -732,6 +809,93 @@ class DeclenchWindow(Adw.ApplicationWindow):
             self.btn_cloud_login.set_label("Sign In with Browser")
             self.btn_cloud_sync_now.set_sensitive(False)
             self.btn_cloud_logout.set_sensitive(False)
+            self.row_this_linux_device.set_title(self.cloud.default_device_name())
+            self.row_this_linux_device.set_subtitle(
+                "Active locally (Sign in above to route notifications between Linux, iPhone & Android)"
+            )
+            self.btn_toggle_this_linux.set_label("Enabled Locally")
+            self.btn_toggle_this_linux.set_sensitive(False)
+            self.btn_only_this_linux.set_sensitive(False)
+
+    def _build_device_row_card(
+        self,
+        dev: dict[str, Any],
+        *,
+        is_this: bool,
+        multi_devices: bool,
+        active_count: int,
+    ) -> Gtk.Widget:
+        card = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        card.add_css_class("declench-card")
+
+        info = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, hexpand=True)
+        top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+
+        name_lbl = Gtk.Label(
+            label=str(dev.get("device_name") or "Device"),
+            xalign=0,
+            wrap=True,
+        )
+        name_lbl.add_css_class("heading")
+        top.append(name_lbl)
+
+        plat_lbl = Gtk.Label(label=str(dev.get("platform") or "web").upper())
+        plat_lbl.add_css_class("declench-badge")
+        top.append(plat_lbl)
+
+        if is_this:
+            this_lbl = Gtk.Label(label="THIS LINUX PC")
+            this_lbl.add_css_class("declench-badge")
+            top.append(this_lbl)
+
+        st_lbl = Gtk.Label(label="ACTIVE" if dev.get("enabled") else "MUTED")
+        st_lbl.add_css_class("declench-badge")
+        top.append(st_lbl)
+        info.append(top)
+
+        last_ts = str(dev.get("last_notified_at") or dev.get("last_seen_at") or "")[:16].replace("T", " ")
+        sub_txt = (
+            "Receives posture nudges"
+            if dev.get("enabled")
+            else "Muted (kept registered without buzzing)"
+        )
+        if last_ts:
+            sub_txt = f"{sub_txt} · Last active {last_ts} UTC"
+        sub_lbl = Gtk.Label(label=sub_txt, xalign=0, wrap=True)
+        sub_lbl.add_css_class("caption")
+        sub_lbl.add_css_class("declench-muted")
+        info.append(sub_lbl)
+        card.append(info)
+
+        actions = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL,
+            spacing=6,
+            valign=Gtk.Align.CENTER,
+        )
+        dev_id = int(dev["id"])
+        if multi_devices and (not dev.get("enabled") or active_count > 1):
+            btn_only = Gtk.Button(label="Only This")
+            btn_only.set_tooltip_text(
+                f"Route notifications exclusively to {dev.get('device_name')} and mute other devices"
+            )
+            btn_only.connect("clicked", self._on_device_only_this_clicked, dev_id)
+            actions.append(btn_only)
+
+        btn_toggle = Gtk.Button(label="Mute" if dev.get("enabled") else "Set Active")
+        btn_toggle.connect(
+            "clicked",
+            self._on_device_toggle_clicked,
+            dev_id,
+            not bool(dev.get("enabled")),
+        )
+        actions.append(btn_toggle)
+
+        btn_remove = Gtk.Button(label="Remove")
+        btn_remove.connect("clicked", self._on_device_remove_clicked, dev_id)
+        actions.append(btn_remove)
+
+        card.append(actions)
+        return card
 
     def _build_log_row_card(self, item: dict[str, Any], compact: bool) -> Gtk.Widget:
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -1010,12 +1174,92 @@ class DeclenchWindow(Adw.ApplicationWindow):
         if app is not None:
             app.apply_theme(self.store.get_setting("theme", "midnight"))
             _, stats = self.store.get_program_and_stats()
-            if int(stats.get("pending_checkins") or 0) == 0:
+            if (
+                int(stats.get("pending_checkins") or 0) == 0
+                or (self.cloud.is_signed_in and not self.cloud.is_this_device_enabled)
+            ):
                 app.withdraw_active_nudge_banner()
         if message:
             self.show_toast(message)
         self.refresh_all()
         return False
+
+    def _run_device_action(self, fn: Callable[[], str]) -> None:
+        if not self.cloud.is_signed_in:
+            self.show_toast("Sign in to Declench Cloud first")
+            return
+
+        def _worker() -> None:
+            msg: Optional[str] = None
+            with self._sync_lock:
+                try:
+                    msg = fn()
+                except CloudSyncError as exc:
+                    msg = str(exc)
+            GLib.idle_add(self._apply_synced_state, msg, False)
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _on_only_this_linux_clicked(self, _btn: Gtk.Button) -> None:
+        def _act() -> str:
+            res = self.cloud.register_this_device(enabled=True, only_this=True)
+            dev = res.get("device") or {}
+            name = dev.get("device_name") or self.cloud.default_device_name()
+            return f"Notifications routed exclusively to {name}"
+
+        self._run_device_action(_act)
+
+    def _on_toggle_this_linux_clicked(self, _btn: Gtk.Button) -> None:
+        my_dev = self.cloud.this_device
+        currently_enabled = my_dev is not None and bool(my_dev.get("enabled"))
+        next_enabled = not currently_enabled
+
+        def _act() -> str:
+            if my_dev is not None and my_dev.get("id") is not None:
+                res = self.cloud.set_device_active(int(my_dev["id"]), next_enabled)
+                dev = res.get("device") or my_dev
+            else:
+                res = self.cloud.register_this_device(enabled=True)
+                dev = res.get("device") or {}
+            name = dev.get("device_name") or self.cloud.default_device_name()
+            return (
+                f"{name} enabled for notifications"
+                if next_enabled
+                else f"{name} muted (kept registered without desktop alerts)"
+            )
+
+        self._run_device_action(_act)
+
+    def _on_device_only_this_clicked(self, _btn: Gtk.Button, device_id: int) -> None:
+        def _act() -> str:
+            res = self.cloud.set_only_active_device(device_id)
+            dev = res.get("device") or {}
+            name = dev.get("device_name") or "selected device"
+            return f"Notifications routed exclusively to {name}"
+
+        self._run_device_action(_act)
+
+    def _on_device_toggle_clicked(
+        self, _btn: Gtk.Button, device_id: int, next_enabled: bool
+    ) -> None:
+        def _act() -> str:
+            res = self.cloud.set_device_active(device_id, next_enabled)
+            dev = res.get("device") or {}
+            name = dev.get("device_name") or "Device"
+            return (
+                f"{name} is now Active"
+                if next_enabled
+                else f"{name} muted"
+            )
+
+        self._run_device_action(_act)
+
+    def _on_device_remove_clicked(self, _btn: Gtk.Button, device_id: int) -> None:
+        def _act() -> str:
+            self.cloud.remove_device(device_id)
+            return "Device removed from account"
+
+        self._run_device_action(_act)
 
     def _on_cloud_logout_clicked(self, _btn: Gtk.Button) -> None:
         self.cloud.sign_out()

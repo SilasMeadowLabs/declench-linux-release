@@ -455,6 +455,18 @@ def test_optional_cloud_sync_client_mocked(tmp_path: Path) -> None:
         if path == "/api/v1/account/theme" and method == "PUT":
             assert body == {"theme": "obsidian"}
             return {"theme": "obsidian", "user": {"id": 7, "email": "linux@example.com", "theme": "obsidian"}}
+        if path == "/api/v1/devices" and method == "POST":
+            assert body is not None
+            dev = {
+                "id": 501,
+                "platform": body.get("platform", "linux"),
+                "device_name": body.get("device_name", "Linux Desktop"),
+                "fcm_token": body.get("fcm_token"),
+                "enabled": bool(body.get("enabled", True)),
+            }
+            return {"device": dev, "devices": [dev], "active_device_count": 1 if dev["enabled"] else 0}
+        if path == "/api/v1/devices" and method == "GET":
+            return {"devices": [], "active_device_count": 0}
         raise AssertionError(f"Unexpected request {method} {path}")
 
     with patch.object(client, "_request_json", side_effect=fake_request):
@@ -697,6 +709,38 @@ def test_end_to_end_sync_against_real_flask_server(tmp_path: Path) -> None:
         store.record_feedback(local_pending["id"], "reset_now", note="Answered on Linux")
         res_2 = cloud.sync_with_local_store(store)
         assert res_2["pushed_feedback"] == 1
+
+        # Verify multi-device notification routing between Linux PC, Web, and iPhone
+        assert cloud.is_this_device_registered is True
+        assert cloud.is_this_device_enabled is True
+        assert len(cloud.cached_devices) == 3
+        iphone_dev = [d for d in cloud.cached_devices if d["platform"] == "ios"][0]
+        linux_dev = cloud.this_device
+        assert linux_dev is not None
+        assert linux_dev["platform"] == "linux"
+
+        # 1. Route exclusively to this Linux PC -> iPhone and Web are muted automatically
+        cloud.register_this_device(enabled=True, only_this=True)
+        assert cloud.is_this_device_enabled is True
+        assert cloud.active_device_count == 1
+        iphone_after_linux_only = [
+            d for d in cloud.cached_devices if d["id"] == iphone_dev["id"]
+        ][0]
+        assert iphone_after_linux_only["enabled"] is False
+
+        # 2. Switch active notifications to iPhone before stepping away -> Linux PC is muted
+        cloud.set_only_active_device(iphone_dev["id"])
+        assert cloud.is_this_device_enabled is False
+        assert cloud.active_device_count == 1
+        iphone_after_switch = [
+            d for d in cloud.cached_devices if d["id"] == iphone_dev["id"]
+        ][0]
+        assert iphone_after_switch["enabled"] is True
+
+        # 3. Re-enable this Linux PC -> both Linux and iPhone active
+        cloud.set_device_active(linux_dev["id"], True)
+        assert cloud.is_this_device_enabled is True
+        assert cloud.active_device_count == 2
 
     # Verify the Flask server now shows all 3 check-ins answered!
     server_stats = web_client.get("/api/v1/stats").get_json()["stats"]

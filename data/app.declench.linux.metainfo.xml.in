@@ -83,6 +83,11 @@
   </screenshots>
 
   <releases>
+    <release version="1.0.2" date="2026-11-08">
+      <description>
+        <p>Added connected device management and one-click notification routing in Mobile and Sync so you can switch active alerts between your Linux desktop and phone.</p>
+      </description>
+    </release>
     <release version="1.0.1" date="2026-11-08">
       <description>
         <p>Added one-step install.sh helper script and updated Mobile &amp; Sync hero copy.</p>

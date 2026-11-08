@@ -132,11 +132,12 @@ class DeclenchApplication(Adw.Application):
 
     def _on_scheduler_tick(self) -> bool:
         self._tick_count += 1
-        fired = self.store.due_tick()
-        if fired is not None:
-            self._send_desktop_notification(fired)
-            if self.window is not None and self.window.get_visible():
-                self.window.refresh_all()
+        if not self.cloud.is_signed_in or self.cloud.is_this_device_enabled:
+            fired = self.store.due_tick()
+            if fired is not None:
+                self._send_desktop_notification(fired)
+                if self.window is not None and self.window.get_visible():
+                    self.window.refresh_all()
 
         # Every 60s (12 x 5s ticks), pull fresh mobile/web check-ins when signed in
         if self._tick_count % 12 == 0 and self.cloud.is_signed_in:

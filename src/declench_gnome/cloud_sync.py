@@ -5,8 +5,9 @@ import json
 import os
 from pathlib import Path
 import secrets
+import socket
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 import urllib.error
 from urllib.parse import parse_qs, urlencode, urlparse
 import urllib.request
@@ -76,8 +77,10 @@ class DeclenchCloudClient:
         tmp_path.replace(path)
 
     def _save_session_file(self, data: Dict[str, Any]) -> None:
-        self._save_private_json(self.session_file, data)
-        self._state = data
+        merged = dict(self._state)
+        merged.update(data)
+        self._save_private_json(self.session_file, merged)
+        self._state = merged
 
     def _clear_pending_auth(self) -> None:
         try:
@@ -85,6 +88,63 @@ class DeclenchCloudClient:
                 self.pending_auth_file.unlink()
         except OSError:
             pass
+
+    @staticmethod
+    def default_device_name() -> str:
+        try:
+            host = (socket.gethostname() or "").strip()
+        except Exception:
+            host = ""
+        if host and host.lower() not in ("localhost", "localhost.localdomain"):
+            return f"Linux Desktop ({host[:40]})"
+        return "Linux Desktop"
+
+    @property
+    def device_token(self) -> str:
+        tok = str(self._state.get("device_token") or "").strip()
+        if len(tok) >= 16:
+            return tok
+        tok = f"linux-gnome-{secrets.token_hex(12)}"
+        self._state["device_token"] = tok
+        if self.session_file.exists() or self._state.get("session_token"):
+            self._save_private_json(self.session_file, self._state)
+        return tok
+
+    @property
+    def cached_devices(self) -> List[Dict[str, Any]]:
+        devs = self._state.get("devices")
+        if not isinstance(devs, list):
+            return []
+        return [d for d in devs if isinstance(d, dict)]
+
+    @property
+    def this_device(self) -> Optional[Dict[str, Any]]:
+        my_tok = str(self._state.get("device_token") or "").strip()
+        if not my_tok:
+            return None
+        for d in self.cached_devices:
+            if str(d.get("fcm_token") or "").strip() == my_tok:
+                return d
+        return None
+
+    @property
+    def is_this_device_registered(self) -> bool:
+        return self.this_device is not None
+
+    @property
+    def is_this_device_enabled(self) -> bool:
+        if not self.is_signed_in:
+            return True
+        dev = self.this_device
+        if dev is not None:
+            return bool(dev.get("enabled", True))
+        if bool(self._state.get("device_removed_by_user")):
+            return False
+        return True
+
+    @property
+    def active_device_count(self) -> int:
+        return sum(1 for d in self.cached_devices if d.get("enabled"))
 
     @property
     def session_token(self) -> Optional[str]:
@@ -101,7 +161,8 @@ class DeclenchCloudClient:
         return self.session_token is not None
 
     def sign_out(self) -> None:
-        self._state = {}
+        preserved_tok = self._state.get("device_token")
+        self._state = {"device_token": preserved_tok} if preserved_tok else {}
         self._clear_pending_auth()
         try:
             if self.session_file.exists():
@@ -327,7 +388,10 @@ class DeclenchCloudClient:
             else:
                 cloud_logs = []
 
-        # 4. Hydrate local SQLite store idempotently
+        # 4. Sync connected notification devices & register/refresh this Linux desktop
+        devices = self._sync_devices_on_poll()
+
+        # 5. Hydrate local SQLite store idempotently
         snap = store.apply_cloud_snapshot(
             user=user,
             cloud_program=cloud_prog,
@@ -337,6 +401,9 @@ class DeclenchCloudClient:
 
         return {
             "user": user,
+            "devices": devices,
+            "this_device": self.this_device,
+            "this_device_enabled": self.is_this_device_enabled,
             "cloud_stats": prog_resp.get("stats") or snap["stats"],
             "program": snap["program"],
             "stats": snap["stats"],
@@ -345,6 +412,133 @@ class DeclenchCloudClient:
             "pushed_urges": pushed_urges,
             "pushed_feedback": pushed_feedback,
         }
+
+    # --- Notification Device Routing & Multi-Device Management ---
+
+    def _sync_devices_on_poll(self) -> List[Dict[str, Any]]:
+        if not self.is_signed_in:
+            return []
+        try:
+            if bool(self._state.get("device_removed_by_user")):
+                return self.fetch_devices()
+            resp = self.register_this_device(enabled=None)
+            return resp.get("devices") if isinstance(resp.get("devices"), list) else self.cached_devices
+        except CloudSyncError:
+            try:
+                return self.fetch_devices()
+            except CloudSyncError:
+                return self.cached_devices
+
+    def fetch_devices(self) -> List[Dict[str, Any]]:
+        if not self.is_signed_in:
+            return []
+        resp = self._request_json("GET", "/api/v1/devices")
+        devs = resp.get("devices") if isinstance(resp.get("devices"), list) else []
+        self._save_session_file({"devices": devs})
+        return self.cached_devices
+
+    def register_this_device(
+        self,
+        *,
+        enabled: Optional[bool] = None,
+        only_this: bool = False,
+        device_name: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        if not self.is_signed_in:
+            raise CloudSyncError("Sign in to Declench Cloud to manage connected devices.")
+
+        name = (device_name or self.default_device_name()).strip()[:120]
+        payload: Dict[str, Any] = {
+            "fcm_token": self.device_token,
+            "platform": "linux",
+            "device_name": name,
+        }
+        if only_this:
+            payload["enabled"] = True
+            payload["only_this"] = True
+        elif enabled is not None:
+            payload["enabled"] = bool(enabled)
+
+        try:
+            resp = self._request_json("POST", "/api/v1/devices", body=payload)
+        except CloudSyncError as exc:
+            if "platform must be one of" in str(exc).lower():
+                fallback_payload = {**payload, "platform": "web"}
+                resp = self._request_json("POST", "/api/v1/devices", body=fallback_payload)
+            else:
+                raise
+
+        dev = resp.get("device") if isinstance(resp.get("device"), dict) else None
+        devs = resp.get("devices") if isinstance(resp.get("devices"), list) else []
+
+        # Ensure only_this mutes other devices even against older backend builds
+        if only_this and dev and dev.get("id") is not None:
+            other_active = [
+                d for d in devs if d.get("id") != dev.get("id") and d.get("enabled")
+            ]
+            if other_active:
+                patch_resp = self._request_json(
+                    "PATCH",
+                    f"/api/v1/devices/{int(dev['id'])}",
+                    body={"only_this": True},
+                )
+                dev = (
+                    patch_resp.get("device")
+                    if isinstance(patch_resp.get("device"), dict)
+                    else dev
+                )
+                devs = (
+                    patch_resp.get("devices")
+                    if isinstance(patch_resp.get("devices"), list)
+                    else devs
+                )
+
+        self._save_session_file(
+            {
+                "devices": devs,
+                "device_removed_by_user": False,
+            }
+        )
+        return {"device": dev, "devices": self.cached_devices}
+
+    def set_device_active(self, device_id: int, enabled: bool) -> Dict[str, Any]:
+        if not self.is_signed_in:
+            raise CloudSyncError("Sign in to Declench Cloud to manage connected devices.")
+        resp = self._request_json(
+            "PATCH",
+            f"/api/v1/devices/{int(device_id)}",
+            body={"enabled": bool(enabled)},
+        )
+        if isinstance(resp.get("devices"), list):
+            self._save_session_file({"devices": resp["devices"]})
+        return resp
+
+    def set_only_active_device(self, device_id: int) -> Dict[str, Any]:
+        if not self.is_signed_in:
+            raise CloudSyncError("Sign in to Declench Cloud to manage connected devices.")
+        resp = self._request_json(
+            "PATCH",
+            f"/api/v1/devices/{int(device_id)}",
+            body={"only_this": True},
+        )
+        if isinstance(resp.get("devices"), list):
+            self._save_session_file({"devices": resp["devices"]})
+        return resp
+
+    def remove_device(self, device_id: int) -> Dict[str, Any]:
+        if not self.is_signed_in:
+            raise CloudSyncError("Sign in to Declench Cloud to manage connected devices.")
+        my_dev = self.this_device
+        is_removing_self = my_dev is not None and int(my_dev.get("id") or -1) == int(device_id)
+        resp = self._request_json("DELETE", f"/api/v1/devices/{int(device_id)}")
+        updates: Dict[str, Any] = {}
+        if isinstance(resp.get("devices"), list):
+            updates["devices"] = resp["devices"]
+        if is_removing_self:
+            updates["device_removed_by_user"] = True
+        if updates:
+            self._save_session_file(updates)
+        return resp
 
     # --- Live Two-Way Desktop Action Helpers ---
 
