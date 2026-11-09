@@ -78,6 +78,7 @@ class DeclenchWindow(Adw.ApplicationWindow):
 
         self._build_coach_tab()
         self._build_schedule_tab()
+        self._build_themes_tab()
         self._build_history_tab()
         self._build_method_tab()
         self._build_everywhere_tab()
@@ -341,17 +342,6 @@ class DeclenchWindow(Adw.ApplicationWindow):
         awake_group.add(self.row_background)
         page.add(awake_group)
 
-        # 8 Curated Themes
-        theme_group = Adw.PreferencesGroup(
-            title="Appearance Theme (8 Curated Palettes)",
-            description="Included free on Linux desktop.",
-        )
-        theme_names = Gtk.StringList.new([f"{t.display_name} ({t.badge})" for t in THEMES])
-        self.combo_theme = Adw.ComboRow(title="Color Theme", model=theme_names)
-        self.combo_theme.connect("notify::selected", self._on_theme_changed)
-        theme_group.add(self.combo_theme)
-        page.add(theme_group)
-
         # Save / Reset Buttons
         act_group = Adw.PreferencesGroup()
         btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin_top=6)
@@ -373,6 +363,88 @@ class DeclenchWindow(Adw.ApplicationWindow):
 
         self.view_stack.add_titled_with_icon(
             page, "schedule", "Schedule", "alarm-symbolic"
+        )
+
+    # --- Tab 3: Appearance & Color Themes Studio ---
+
+    def _build_themes_tab(self) -> None:
+        scroll = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER)
+        clamp = Adw.Clamp(
+            maximum_size=760,
+            margin_top=16,
+            margin_bottom=24,
+            margin_start=16,
+            margin_end=16,
+        )
+        scroll.set_child(clamp)
+
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
+        clamp.set_child(box)
+
+        theme_group = Adw.PreferencesGroup(
+            title="Appearance and Color Theme",
+            description=(
+                "All 8 curated dark, light, and pastel studio palettes are 100% free on Linux "
+                "and sync automatically across your devices when connected to Declench Cloud."
+            ),
+        )
+        theme_names = Gtk.StringList.new([f"{t.display_name} ({t.badge})" for t in THEMES])
+        self.combo_theme = Adw.ComboRow(title="Active Color Theme", model=theme_names)
+        self.combo_theme.connect("notify::selected", self._on_theme_changed)
+        theme_group.add(self.combo_theme)
+
+        self.row_active_theme_summary = Adw.ActionRow(
+            title="Current Palette",
+            subtitle="",
+            use_markup=False,
+        )
+        theme_group.add(self.row_active_theme_summary)
+        box.append(theme_group)
+
+        gallery_hdr = Gtk.Label(label="Curated Theme Gallery (Click Any Palette to Apply)", xalign=0)
+        gallery_hdr.add_css_class("heading")
+        box.append(gallery_hdr)
+
+        self.theme_card_buttons: dict[str, Gtk.Button] = {}
+        for t in THEMES:
+            card = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+            card.add_css_class("declench-card")
+
+            info = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4, hexpand=True)
+            top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+
+            name_lbl = Gtk.Label(label=t.display_name, xalign=0, wrap=True)
+            name_lbl.add_css_class("title-4")
+            top.append(name_lbl)
+
+            badge_lbl = Gtk.Label(label=t.badge.upper(), xalign=0)
+            badge_lbl.add_css_class("declench-badge")
+            top.append(badge_lbl)
+            info.append(top)
+
+            sum_lbl = Gtk.Label(label=t.summary, xalign=0, wrap=True)
+            sum_lbl.add_css_class("declench-muted")
+            info.append(sum_lbl)
+
+            swatches_lbl = Gtk.Label(
+                label=f"Surface {t.bg_primary} · Card {t.bg_card} · Accent {t.accent_primary} · Highlight {t.accent_secondary}",
+                xalign=0,
+                wrap=True,
+            )
+            swatches_lbl.add_css_class("caption")
+            swatches_lbl.add_css_class("declench-muted")
+            info.append(swatches_lbl)
+            card.append(info)
+
+            btn_apply = Gtk.Button(label="Apply Theme", valign=Gtk.Align.CENTER)
+            btn_apply.connect("clicked", self._on_theme_card_clicked, t.key)
+            self.theme_card_buttons[t.key] = btn_apply
+            card.append(btn_apply)
+
+            box.append(card)
+
+        self.view_stack.add_titled_with_icon(
+            scroll, "themes", "Themes", "applications-graphics-symbolic"
         )
 
     # --- Tab 3: Check-Ins History & Local CSV/JSON Export ---
@@ -419,7 +491,7 @@ class DeclenchWindow(Adw.ApplicationWindow):
             scroll, "history", "History", "view-list-symbolic"
         )
 
-    # --- Tab 4: The Declench Method & Jaw Exercises Guide ---
+    # --- Tab 5: The Declench Method & Behavioral Science Guide ---
 
     def _build_method_tab(self) -> None:
         scroll = Gtk.ScrolledWindow(hscrollbar_policy=Gtk.PolicyType.NEVER)
@@ -429,33 +501,102 @@ class DeclenchWindow(Adw.ApplicationWindow):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
         clamp.set_child(box)
 
+        # Hero Overview Card: What Is Declench?
+        intro = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        intro.add_css_class("declench-pro-banner")
+
+        intro_badge = Gtk.Label(
+            label="WHAT IS DECLENCH? · AWAKE BRUXISM & TECH JAW",
+            xalign=0,
+        )
+        intro_badge.add_css_class("declench-badge")
+        intro.append(intro_badge)
+
+        intro_title = Gtk.Label(
+            label="Interrupt Unconscious Daytime Jaw Clenching and Train a Relaxed Baseline",
+            xalign=0,
+            wrap=True,
+        )
+        intro_title.add_css_class("title-2")
+        intro.append(intro_title)
+
+        intro_body = Gtk.Label(
+            label=(
+                "Unconscious daytime jaw clenching and tooth bracing (awake bruxism) runs like a hidden "
+                "background process. The moment your attention locks onto deep work (debugging code, "
+                "reviewing pull requests, writing, or gaming), your masseter and temporalis muscles "
+                "silently clamp down without you noticing.\n\n"
+                "Sticky notes on your monitor fade into the background after a day. Nightguards protect "
+                "enamel while you sleep, but do not stop you from clenching into plastic or bracing all "
+                "afternoon. And predictable fixed-interval timers get tuned out by your brain within 48 hours.\n\n"
+                "Declench replaces passive reminders with a closed-loop habit-rewiring system built around "
+                "the behavioral mechanics below."
+            ),
+            xalign=0,
+            wrap=True,
+        )
+        intro_body.add_css_class("declench-muted")
+        intro.append(intro_body)
+        box.append(intro)
+
         cards = [
             (
-                "STEP 1 · ANATOMICAL ANCHOR",
+                "MECHANIC 1 · THE ANATOMICAL ANCHOR",
                 'The Passive "N" Resting Posture',
-                'Say the letter "N" silently and notice where the tip of your tongue lands: right on the palate ridge behind your upper front teeth. Keep your lips gently closed and let a 2 to 3 mm gap float between your upper and lower teeth. Your jaw muscles naturally release when parked in passive "N".',
+                'Say the letter "N" out loud and hold where the tip of your tongue lands:\n'
+                "• Lips gently together (relaxed, never pursed)\n"
+                "• Teeth slightly apart (a relaxed 2 to 3 mm freeway space with zero tooth contact)\n"
+                "• Tip of the tongue resting lightly on the palatal ridge right behind your upper front teeth\n\n"
+                "Giving your jaw a specific, repeatable competing posture naturally disengages the jaw-closing "
+                "muscles instead of leaving your bite hovering on the edge of a clench.",
             ),
             (
-                "STEP 2 · DEFEATING HABITUATION",
-                "Why ±25% Random Daytime Polling Works",
-                "Fixed hourly reminders turn into invisible background noise within days. Declench adds ±25% random jitter around your interval so each desktop notification acts as a genuine pattern interrupt while you code, write, or review pull requests.",
+                "MECHANIC 2 · DEFEATING SENSORY HABITUATION",
+                'Variable-Interval ("Brain-Hack") Daytime Nudges',
+                "Predictable clock ticks trigger sensory habituation: your nervous system quickly learns to "
+                "ignore a fixed 30-minute chime. Declench randomizes every interval (±25% jitter by default) "
+                "strictly inside your configured Awake Window (for example, 08:30 to 21:30), catching tension "
+                "in the exact moment it happens while keeping your evenings and sleep undisturbed.",
             ),
             (
-                "STEP 3 · GENTLE JAW UNWIND EXERCISES",
-                "Quick Jaw Stretch, Cheek Massage & Temple Release",
-                "1. Controlled N-Tongue Opening: Keep your tongue tip on 'N' and slowly open within an easy, pain-free range for one deep breath.\n"
-                "2. Masseter Cheek Circles: Use two fingertips to massage the thick jaw muscle below your cheekbones in slow circles for 10 seconds.\n"
-                "3. Temple & Shoulder Drop: Lightly massage your temples, exhale slowly, drop your shoulders away from your ears, and settle back into 'N'.",
+                "MECHANIC 3 · CLOSED-LOOP ADAPTIVE COACHING",
+                "One-Click GNOME Notification Check-Ins & Progressive Widening",
+                "Every desktop nudge arrives with instant action buttons right inside the GNOME notification banner:\n"
+                '• Already in "N": You were already relaxed when the nudge arrived. Declench widens your interval '
+                "step-by-step toward your goal (for example, 20m → 90m) as automaticity grows.\n"
+                '• Caught & Reset: You caught yourself clenching and dropped back into "N". Adaptive coaching '
+                "gently tightens or holds your cadence while tension is active.\n"
+                "• 5s Urge: You noticed an urge to clench between alerts and rode it out for 5 calm seconds "
+                "without biting down, starving the old reflex loop.\n"
+                "• Silence 1h: Pause nudges for deep meetings or presentations with one click.",
             ),
             (
-                "STEP 4 · EXTINCTION BURSTS",
-                "Riding Out the 5-Second Urge",
-                "When breaking a bracing habit, your jaw often fires a brief urge to clench back down. Hold passive 'N' for 5 calm seconds and click +1 5-Second Urge Resisted to weaken the old reflex loop.",
+                "MECHANIC 4 · THREE-PHASE HABIT TELEMETRY",
+                "How Neuromuscular Rewiring Progresses Over Time",
+                "• Phase 1: Synaptic Strengthening (Days 1 to 21): Catch unconscious clenching early and map "
+                "your personal Peak Clench Windows across the 24-hour and 14-day stacked charts.\n"
+                '• Phase 2: Active Myelination (Weeks 3 to 8): Watch your green Already in "N" automaticity '
+                "bars climb as the relaxed resting posture begins firing by default.\n"
+                "• Phase 3: Effortless Default Baseline (Months 2 to 6): Your cadence widens into gentle "
+                "maintenance checks as a weightless jaw becomes your automatic baseline.",
             ),
             (
-                "HONEST SCIENCE · NON-MEDICAL TOOL",
-                "Privacy-First Local Habit Coach",
-                "Declench is a personal behavioral habit-awareness tool inspired by physical-therapy posture cueing and Ecological Momentary Assessment. It is not a medical device and does not diagnose or treat TMJ or TMD conditions.",
+                "MECHANIC 5 · GUIDED JAW UNWIND PROMPTS",
+                "60-Second Jaw Stretch, Cheek Massage & Temple Release",
+                "1. Controlled N-Tongue Opening: Keep your tongue tip on 'N' and slowly open within an easy, "
+                "pain-free range for one deep breath.\n"
+                "2. Masseter Cheek Circles: Use two fingertips to massage the thick jaw muscle below your "
+                "cheekbones in slow circles for 10 seconds.\n"
+                "3. Temple & Shoulder Drop: Lightly massage your temples, exhale slowly, drop your shoulders "
+                "away from your ears, and settle back into 'N'.",
+            ),
+            (
+                "HONEST TRANSPARENCY · PRIVACY-FIRST",
+                "Personal Habit-Awareness Coach, Not a Medical Device",
+                "Declench is a personal habit-awareness and posture coaching tool inspired by physical-therapy "
+                "posture cueing and Ecological Momentary Assessment. It is not a medical or dental device and "
+                "does not diagnose, treat, or cure bruxism or TMJ/TMD disorders. Always consult a qualified "
+                "dentist or physician for tooth wear, jaw pain, or sleep bruxism.",
             ),
         ]
         for badge, title, body_txt in cards:
@@ -472,9 +613,21 @@ class DeclenchWindow(Adw.ApplicationWindow):
             c.append(p_lbl)
             box.append(c)
 
-        btn_web_guide = Gtk.Button(label="Read Illustrated Guide on declench.app", halign=Gtk.Align.START)
+        btn_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        btn_try_unwind = Gtk.Button(label="Send Guided Jaw Stretch Prompt Now")
+        btn_try_unwind.add_css_class("declench-primary-cta")
+        btn_try_unwind.connect(
+            "clicked",
+            lambda *_: self.get_application().trigger_nudge_and_notify(force_exercise=True)
+            if self.get_application() is not None
+            else None,
+        )
+        btn_row.append(btn_try_unwind)
+
+        btn_web_guide = Gtk.Button(label="Read Illustrated Guide on declench.app")
         btn_web_guide.connect("clicked", lambda *_: Gio.AppInfo.launch_default_for_uri(METHOD_WEB_URL, None))
-        box.append(btn_web_guide)
+        btn_row.append(btn_web_guide)
+        box.append(btn_row)
 
         self.view_stack.add_titled_with_icon(
             scroll, "method", "Method", "info-outline-symbolic"
@@ -724,6 +877,7 @@ class DeclenchWindow(Adw.ApplicationWindow):
             theme_idx = next((i for i, t in enumerate(THEMES) if t.key == palette.key), 0)
             if self.combo_theme.get_selected() != theme_idx:
                 self.combo_theme.set_selected(theme_idx)
+            self._sync_theme_gallery_ui(palette)
         finally:
             self._updating_ui = False
 
@@ -1031,6 +1185,22 @@ class DeclenchWindow(Adw.ApplicationWindow):
         self.store.set_setting("dismissed_mobile_promo", "1")
         self.promo_banner.set_visible(False)
 
+    def _sync_theme_gallery_ui(self, active_palette: Any) -> None:
+        if hasattr(self, "row_active_theme_summary"):
+            self.row_active_theme_summary.set_title(
+                f"{active_palette.display_name} ({active_palette.badge})"
+            )
+            self.row_active_theme_summary.set_subtitle(active_palette.summary)
+        for key, btn in getattr(self, "theme_card_buttons", {}).items():
+            if key == active_palette.key:
+                btn.set_label("Active Theme")
+                btn.set_sensitive(False)
+                btn.add_css_class("declench-primary-cta")
+            else:
+                btn.set_label("Apply Theme")
+                btn.set_sensitive(True)
+                btn.remove_css_class("declench-primary-cta")
+
     def _on_theme_changed(self, combo: Adw.ComboRow, _pspec: Any) -> None:
         if self._updating_ui:
             return
@@ -1043,8 +1213,16 @@ class DeclenchWindow(Adw.ApplicationWindow):
                 app.apply_theme(chosen.key)
             ts = self.store.get_timeseries(self.selected_granularity)
             self.chart.set_data(ts, chosen)
+            self._sync_theme_gallery_ui(chosen)
             if self.cloud.is_signed_in:
                 self._run_cloud_mutation(lambda: self.cloud.push_theme(chosen.key))
+
+    def _on_theme_card_clicked(self, _btn: Gtk.Button, theme_key: str) -> None:
+        idx = next((i for i, t in enumerate(THEMES) if t.key == theme_key), -1)
+        if idx >= 0:
+            self.combo_theme.set_selected(idx)
+            chosen = THEMES[idx]
+            self.show_toast(f"Applied {chosen.display_name} theme")
 
     def _on_save_schedule(self, _btn: Gtk.Button) -> None:
         try:

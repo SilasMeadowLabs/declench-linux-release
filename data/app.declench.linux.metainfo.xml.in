@@ -83,6 +83,11 @@
   </screenshots>
 
   <releases>
+    <release version="1.0.4" date="2026-11-09">
+      <description>
+        <p>Added a dedicated Themes tab with an interactive 8-palette gallery and expanded the Method tab with behavioral mechanics, awake bruxism overview, and one-click guided jaw stretch prompts.</p>
+      </description>
+    </release>
     <release version="1.0.3" date="2026-11-08">
       <description>
         <p>Hide free trial upsell card for active Declench Pro members and automatically restart running background instances during install.sh updates.</p>

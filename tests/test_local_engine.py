@@ -577,18 +577,30 @@ def test_gtk4_libadwaita_window_instantiation(tmp_path: Path) -> None:
     )
     time.sleep(0.25)
     try:
-        script = (
-            "import gi; gi.require_version('Gtk', '4.0'); gi.require_version('Adw', '1'); "
-            "from gi.repository import Gio, GLib; "
-            "from declench_gnome.app import DeclenchApplication; "
-            "from declench_gnome.local_store import LocalDeclenchStore; "
-            "from declench_gnome.cloud_sync import DeclenchCloudClient; "
-            f"store = LocalDeclenchStore(db_path={str(tmp_path / 'ui.sqlite3')!r}); "
-            f"cloud = DeclenchCloudClient(session_file={str(tmp_path / 'sess.json')!r}); "
-            "app = DeclenchApplication(store=store, cloud=cloud); "
-            "app.set_flags(Gio.ApplicationFlags.NON_UNIQUE | Gio.ApplicationFlags.HANDLES_OPEN); "
-            "GLib.timeout_add(120, lambda: (app._on_quit(), False)[1]); "
-            "raise SystemExit(app.run(['app.declench.linux', 'declench://auth-callback?error=canceled']))"
+        script = "\n".join(
+            [
+                "import gi",
+                "gi.require_version('Gtk', '4.0')",
+                "gi.require_version('Adw', '1')",
+                "from gi.repository import Gio, GLib",
+                "from declench_gnome.app import DeclenchApplication",
+                "from declench_gnome.local_store import LocalDeclenchStore",
+                "from declench_gnome.cloud_sync import DeclenchCloudClient",
+                f"store = LocalDeclenchStore(db_path={str(tmp_path / 'ui.sqlite3')!r})",
+                f"cloud = DeclenchCloudClient(session_file={str(tmp_path / 'sess.json')!r})",
+                "app = DeclenchApplication(store=store, cloud=cloud)",
+                "app.set_flags(Gio.ApplicationFlags.NON_UNIQUE | Gio.ApplicationFlags.HANDLES_OPEN)",
+                "def _check_tabs():",
+                "    assert app.window is not None",
+                "    assert app.window.view_stack.get_child_by_name('themes') is not None",
+                "    assert app.window.view_stack.get_child_by_name('method') is not None",
+                "    app.window._on_theme_card_clicked(None, 'matcha')",
+                "    assert store.get_setting('theme') == 'matcha'",
+                "    app._on_quit()",
+                "    return False",
+                "GLib.timeout_add(120, _check_tabs)",
+                "raise SystemExit(app.run(['app.declench.linux', 'declench://auth-callback?error=canceled']))",
+            ]
         )
         res = subprocess.run([str(gtk_py), "-c", script], env=env, capture_output=True, text=True, timeout=10)
         assert res.returncode == 0, res.stderr
