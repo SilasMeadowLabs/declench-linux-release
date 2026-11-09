@@ -83,6 +83,11 @@
   </screenshots>
 
   <releases>
+    <release version="1.0.6" date="2026-11-09">
+      <description>
+        <p>Ensure all 4 Method diagrams always render inline inside their cards at full 16:9 height in addition to click-to-expand viewing.</p>
+      </description>
+    </release>
     <release version="1.0.5" date="2026-11-09">
       <description>
         <p>Bundled high-resolution anatomical and behavioral science illustrations directly into the Method tab with click-to-expand diagram viewers.</p>
