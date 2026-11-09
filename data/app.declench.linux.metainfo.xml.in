@@ -83,6 +83,11 @@
   </screenshots>
 
   <releases>
+    <release version="1.0.5" date="2026-11-09">
+      <description>
+        <p>Bundled high-resolution anatomical and behavioral science illustrations directly into the Method tab with click-to-expand diagram viewers.</p>
+      </description>
+    </release>
     <release version="1.0.4" date="2026-11-09">
       <description>
         <p>Added a dedicated Themes tab with an interactive 8-palette gallery and expanded the Method tab with behavioral mechanics, awake bruxism overview, and one-click guided jaw stretch prompts.</p>

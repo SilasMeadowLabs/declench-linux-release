@@ -31,3 +31,16 @@ python.install_sources(
   subdir: 'declench_gnome',
 )
 
+declench_assets = [
+  'declench_gnome/assets/jaw_exercises_guide.jpg',
+  'declench_gnome/assets/n_position_posture.jpg',
+  'declench_gnome/assets/neuroplasticity_rewiring.jpg',
+  'declench_gnome/assets/progressive_polling_loop.jpg',
+]
+
+python.install_sources(
+  declench_assets,
+  subdir: 'declench_gnome/assets',
+)
+
+

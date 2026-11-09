@@ -214,5 +214,9 @@ def build_gtk_css(palette: ThemePalette) -> str:
         border-radius: 12px;
         padding: 8px 16px;
     }}
+    .declench-method-img {{
+        border-radius: 12px;
+        border: 1px solid {border_alpha};
+    }}
     """
 

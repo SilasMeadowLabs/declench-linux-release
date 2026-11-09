@@ -594,6 +594,7 @@ def test_gtk4_libadwaita_window_instantiation(tmp_path: Path) -> None:
                 "    assert app.window is not None",
                 "    assert app.window.view_stack.get_child_by_name('themes') is not None",
                 "    assert app.window.view_stack.get_child_by_name('method') is not None",
+                "    assert len(app.window.method_pictures) == 4",
                 "    app.window._on_theme_card_clicked(None, 'matcha')",
                 "    assert store.get_setting('theme') == 'matcha'",
                 "    app._on_quit()",

@@ -24,8 +24,12 @@ Say the letter **"N"** out loud and hold where your tongue lands:
 
 Giving your jaw a specific, repeatable competing posture naturally disengages the jaw-closing muscles instead of leaving your bite hovering on the edge of a clench.
 
+![The Passive N Resting Posture vs Unconscious Jaw Clenching](./src/declench_gnome/assets/n_position_posture.jpg)
+
 ### 2. Variable-Interval ("Brain-Hack") Daytime Nudges
 Predictable clock ticks trigger **sensory habituation**: your nervous system learns to ignore a fixed 30-minute chime. Declench randomizes every interval (`±25%` jitter by default) strictly inside your configured **Awake Window** (e.g., `08:30` to `21:30`), catching tension in the exact moment it happens while keeping your evenings and sleep undisturbed.
+
+![Closed-Loop Progressive Polling and One-Tap Check-Ins](./src/declench_gnome/assets/progressive_polling_loop.jpg)
 
 ### 3. One-Click GNOME Notification Check-Ins & Adaptive Intervals
 Every desktop nudge arrives with instant action buttons right inside the GNOME notification banner:
@@ -36,6 +40,10 @@ Every desktop nudge arrives with instant action buttons right inside the GNOME n
 
 ### 4. Three-Phase Habit Telemetry & Jaw Unwind Prompts
 Track your **Followed Streak**, **Already in "N" Automaticity Rate**, **5-Second Urges Resisted**, and **Peak Clench Windows** across 24-hour, 14-day, and 12-month stacked charts, with optional guided jaw stretch and cheek massage prompts blended into every *N*th check-in.
+
+| Neuroplasticity & Active Myelination | Guided Jaw Stretch & Cheek Massage |
+| :---: | :---: |
+| ![Neuroplasticity Rewiring](./src/declench_gnome/assets/neuroplasticity_rewiring.jpg) | ![Guided Jaw Stretch and Massage](./src/declench_gnome/assets/jaw_exercises_guide.jpg) |
 
 ---
 

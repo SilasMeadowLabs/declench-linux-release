@@ -539,6 +539,7 @@ class DeclenchWindow(Adw.ApplicationWindow):
         intro.append(intro_body)
         box.append(intro)
 
+        assets_dir = Path(__file__).resolve().parent / "assets"
         cards = [
             (
                 "MECHANIC 1 · THE ANATOMICAL ANCHOR",
@@ -549,6 +550,7 @@ class DeclenchWindow(Adw.ApplicationWindow):
                 "• Tip of the tongue resting lightly on the palatal ridge right behind your upper front teeth\n\n"
                 "Giving your jaw a specific, repeatable competing posture naturally disengages the jaw-closing "
                 "muscles instead of leaving your bite hovering on the edge of a clench.",
+                "n_position_posture.jpg",
             ),
             (
                 "MECHANIC 2 · DEFEATING SENSORY HABITUATION",
@@ -557,6 +559,7 @@ class DeclenchWindow(Adw.ApplicationWindow):
                 "ignore a fixed 30-minute chime. Declench randomizes every interval (±25% jitter by default) "
                 "strictly inside your configured Awake Window (for example, 08:30 to 21:30), catching tension "
                 "in the exact moment it happens while keeping your evenings and sleep undisturbed.",
+                "progressive_polling_loop.jpg",
             ),
             (
                 "MECHANIC 3 · CLOSED-LOOP ADAPTIVE COACHING",
@@ -569,6 +572,7 @@ class DeclenchWindow(Adw.ApplicationWindow):
                 "• 5s Urge: You noticed an urge to clench between alerts and rode it out for 5 calm seconds "
                 "without biting down, starving the old reflex loop.\n"
                 "• Silence 1h: Pause nudges for deep meetings or presentations with one click.",
+                None,
             ),
             (
                 "MECHANIC 4 · THREE-PHASE HABIT TELEMETRY",
@@ -579,6 +583,7 @@ class DeclenchWindow(Adw.ApplicationWindow):
                 "bars climb as the relaxed resting posture begins firing by default.\n"
                 "• Phase 3: Effortless Default Baseline (Months 2 to 6): Your cadence widens into gentle "
                 "maintenance checks as a weightless jaw becomes your automatic baseline.",
+                "neuroplasticity_rewiring.jpg",
             ),
             (
                 "MECHANIC 5 · GUIDED JAW UNWIND PROMPTS",
@@ -589,6 +594,7 @@ class DeclenchWindow(Adw.ApplicationWindow):
                 "cheekbones in slow circles for 10 seconds.\n"
                 "3. Temple & Shoulder Drop: Lightly massage your temples, exhale slowly, drop your shoulders "
                 "away from your ears, and settle back into 'N'.",
+                "jaw_exercises_guide.jpg",
             ),
             (
                 "HONEST TRANSPARENCY · PRIVACY-FIRST",
@@ -597,19 +603,52 @@ class DeclenchWindow(Adw.ApplicationWindow):
                 "posture cueing and Ecological Momentary Assessment. It is not a medical or dental device and "
                 "does not diagnose, treat, or cure bruxism or TMJ/TMD disorders. Always consult a qualified "
                 "dentist or physician for tooth wear, jaw pain, or sleep bruxism.",
+                None,
             ),
         ]
-        for badge, title, body_txt in cards:
-            c = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.method_pictures: list[Gtk.Picture] = []
+        for badge, title, body_txt, img_name in cards:
+            c = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
             c.add_css_class("declench-card")
-            b_lbl = Gtk.Label(label=badge, xalign=0)
+
+            hdr_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            b_lbl = Gtk.Label(label=badge, xalign=0, hexpand=True)
             b_lbl.add_css_class("declench-badge")
+            hdr_row.append(b_lbl)
+
+            img_path = (assets_dir / img_name) if img_name else None
+            if img_path is not None and img_path.is_file():
+                btn_zoom = Gtk.Button(label="Expand Diagram")
+                btn_zoom.add_css_class("flat")
+                btn_zoom.connect(
+                    "clicked",
+                    lambda _b, t=title, p=img_path: self._show_method_image_dialog(t, p),
+                )
+                hdr_row.append(btn_zoom)
+            c.append(hdr_row)
+
             t_lbl = Gtk.Label(label=title, xalign=0, wrap=True)
             t_lbl.add_css_class("title-4")
+            c.append(t_lbl)
+
+            if img_path is not None and img_path.is_file():
+                pic = Gtk.Picture.new_for_filename(str(img_path))
+                pic.set_can_shrink(True)
+                pic.set_content_fit(Gtk.ContentFit.CONTAIN)
+                pic.set_hexpand(True)
+                pic.set_overflow(Gtk.Overflow.HIDDEN)
+                pic.add_css_class("declench-method-img")
+                click = Gtk.GestureClick.new()
+                click.connect(
+                    "released",
+                    lambda _g, _n, _x, _y, t=title, p=img_path: self._show_method_image_dialog(t, p),
+                )
+                pic.add_controller(click)
+                self.method_pictures.append(pic)
+                c.append(pic)
+
             p_lbl = Gtk.Label(label=body_txt, xalign=0, wrap=True)
             p_lbl.add_css_class("declench-muted")
-            c.append(b_lbl)
-            c.append(t_lbl)
             c.append(p_lbl)
             box.append(c)
 
@@ -632,6 +671,34 @@ class DeclenchWindow(Adw.ApplicationWindow):
         self.view_stack.add_titled_with_icon(
             scroll, "method", "Method", "info-outline-symbolic"
         )
+
+    def _show_method_image_dialog(self, title: str, img_path: Path) -> None:
+        win = Adw.Window(
+            title=title,
+            transient_for=self,
+            modal=True,
+            default_width=960,
+            default_height=580,
+        )
+        win.add_css_class("declench-window")
+
+        root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        win.set_content(root)
+
+        hdr = Adw.HeaderBar()
+        root.append(hdr)
+
+        pic = Gtk.Picture.new_for_filename(str(img_path))
+        pic.set_can_shrink(True)
+        pic.set_content_fit(Gtk.ContentFit.CONTAIN)
+        pic.set_hexpand(True)
+        pic.set_vexpand(True)
+        pic.set_margin_top(12)
+        pic.set_margin_bottom(12)
+        pic.set_margin_start(12)
+        pic.set_margin_end(12)
+        root.append(pic)
+        win.present()
 
     # --- Tab 5: Mobile & Declench Pro Cloud Sync (Upsell + Optional Login) ---
 
